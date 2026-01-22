@@ -18,72 +18,79 @@ st.set_page_config(
     page_icon="🔧"
 )
 
-# --- تنسيقات CSS (الألوان الفاتحة والخطوط الكبيرة) ---
+# --- CSS ذكي يعمل في الوضعين (Light & Dark) ---
 st.markdown("""
 <style>
-    /* الحاوية الرئيسية للهيدر - خلفية غامقة عشان تناسب الوضع الليلي */
+    /* 1. الحاوية الرئيسية للهيدر */
+    /* بنخلي الخلفية لونها أزرق ثابت، فالكلام جواها لازم يبقى أبيض دائماً */
     .main-container {
-        background-color: #1E1E1E; /* رمادي غامق جداً */
+        background-color: #0077b5; /* لون البراند الأزرق */
         padding: 2rem;
         border-radius: 15px;
         margin-bottom: 2rem;
-        border-left: 10px solid #00a8ff; /* خط أزرق سماوي فاتح */
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     
-    /* العنوان الرئيسي - لون أبيض */
+    /* العنوان الرئيسي (دائماً أبيض لأنه على خلفية زرقاء) */
     .main-header {
         font-size: 3.5rem; 
-        color: #ffffff; 
+        color: #ffffff !important; 
         font-weight: 900; 
         margin-bottom: 0.2rem;
         font-family: 'Segoe UI', sans-serif;
         letter-spacing: -1px;
     }
     
-    /* العنوان الفرعي - لون سماوي فاتح */
+    /* العنوان الفرعي (أبيض شفاف شوية) */
     .sub-header {
         font-size: 1.4rem; 
-        color: #00a8ff; 
+        color: rgba(255, 255, 255, 0.9) !important; 
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
 
-    /* === تكبير وتفتيح لون أسماء الخانات (Labels) === */
-    /* ده بيغير لون "Diameter", "Price", "Unit" للأبيض */
+    /* 2. تكبير وتوضيح أسماء الخانات (Labels) */
+    /* هنا السر: بنستخدم var(--text-color) عشان يقلب لوحده حسب وضع الجهاز */
     .stNumberInput label p, 
     .stTextInput label p, 
     .stSelectbox label p, 
     .stRadio label p {
-        font-size: 1.4rem !important; /* خط كبير */
-        font-weight: 700 !important;
-        color: #ffffff !important; /* لون أبيض ناصع */
+        font-size: 1.3rem !important; /* خط كبير */
+        font-weight: 800 !important;  /* خط عريض */
+        color: var(--text-color) !important; /* ذكي: يسود في الفاتح ويبيض في الغامق */
     }
 
-    /* === تكبير وتفتيح خيارات الراديو (HDPE / uPVC) === */
+    /* 3. تكبير خيارات الراديو (HDPE / uPVC) */
     .stRadio div[role='radiogroup'] label div p {
-        font-size: 1.5rem !important; /* تكبير الاختيارات نفسها */
+        font-size: 1.4rem !important;
         font-weight: bold !important;
-        color: #e0e0e0 !important; /* لون أبيض مائل للرمادي الخفيف */
+        color: var(--text-color) !important;
     }
 
-    /* تكبير الكلام اللي بيتكتب جوه الخانات */
+    /* 4. الكلام اللي بيتكتب جوه الخانات */
     .stNumberInput input, .stTextInput input {
         font-size: 1.2rem !important;
         font-weight: bold;
+        color: var(--text-color) !important;
     }
 
-    /* تكبير الأزرار */
+    /* 5. الأزرار */
     .stButton>button {
         width: 100%;
         border-radius: 8px;
         font-weight: bold;
         height: 3.5em;
         font-size: 1.2rem;
+        background-color: #0077b5; /* أزرق */
+        color: white; /* كتابة بيضاء */
+        border: none;
     }
-    
-    /* تكبير خطوط التبويبات (Tabs) */
+    .stButton>button:hover {
+        background-color: #005f91; /* أغمق سنة لما تقف عليه */
+    }
+
+    /* 6. تكبير التبويبات */
     button[data-baseweb="tab"] > div {
         font-size: 1.3rem !important;
         font-weight: bold !important;
@@ -144,7 +151,7 @@ def load_data(file_path, sheet_name):
 
 def create_pdf(dataframe):
     buffer = io.BytesIO()
-    # Landscape orientation
+    # Landscape A4
     doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=30, bottomMargin=18)
     elements = []
     styles = getSampleStyleSheet()
@@ -315,43 +322,4 @@ if df is not None:
         
         c1, c2 = st.columns(2)
         op = c1.number_input("Offer Price (EGP/m):", min_value=0.0)
-        rd = c2.selectbox("Diameter:", sorted(df['Diameter'].unique().tolist()), key="rev")
-        
-        rev_specs = {}
-        if spec_cols:
-            cols = st.columns(len(spec_cols))
-            for idx, col in enumerate(spec_cols):
-                with cols[idx]:
-                    vals = [x for x in sorted(df[col].unique().tolist(), key=str) if x != "-"]
-                    vals.insert(0, "-")
-                    rev_specs[col] = st.selectbox(f"{col}", vals, key=f"t2_{col}")
-
-        if st.button("Analyze Offer 🔍", type="primary"):
-            if op > 0:
-                mask = (df['Diameter'] == rd)
-                for k, v in rev_specs.items():
-                    if v != "-": mask &= (df[k] == v)
-                
-                row = df[mask]
-                
-                if row.empty:
-                    st.warning("❌ No pipes found with these criteria.")
-                else:
-                    unique_weights = [w for w in row['Weight'].unique() if w > 0]
-                    if len(unique_weights) == 0:
-                        st.error("⚠️ Found pipes but weights are 0.")
-                    elif len(unique_weights) == 1:
-                        w = unique_weights[0]
-                        est_ton = (op / w) * 1000
-                        st.success(f"🏭 Estimated Ton Price: **{est_ton:,.2f} EGP**")
-                        st.markdown(f"**Based on:** Weight {w} kg/m")
-                    else:
-                        st.info(f"💡 Found {len(row)} possible pipes:")
-                        results_table = row.copy()
-                        results_table['Calculated Ton Price'] = (op / results_table['Weight']) * 1000
-                        display_cols = ['Diameter', 'Weight', 'Calculated Ton Price'] + [c for c in spec_cols if c in results_table.columns]
-                        st.dataframe(results_table[display_cols].style.format({'Calculated Ton Price': '{:,.2f}', 'Weight': '{:.3f}'}))
-            else:
-                st.warning("Please enter a price.")
-else:
-    st.info("Loading...")
+        rd = c2.selectbox("Diameter:", sorted(df['Diameter'].unique().tolist()), key="rev
