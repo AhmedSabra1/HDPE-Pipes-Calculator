@@ -322,4 +322,43 @@ if df is not None:
         
         c1, c2 = st.columns(2)
         op = c1.number_input("Offer Price (EGP/m):", min_value=0.0)
-        rd = c2.selectbox("Diameter:", sorted(df['Diameter'].unique().tolist()), key="rev
+        rd = c2.selectbox("Diameter:", sorted(df['Diameter'].unique().tolist()), key="rev")
+        
+        rev_specs = {}
+        if spec_cols:
+            cols = st.columns(len(spec_cols))
+            for idx, col in enumerate(spec_cols):
+                with cols[idx]:
+                    vals = [x for x in sorted(df[col].unique().tolist(), key=str) if x != "-"]
+                    vals.insert(0, "-")
+                    rev_specs[col] = st.selectbox(f"{col}", vals, key=f"t2_{col}")
+
+        if st.button("Analyze Offer 🔍", type="primary"):
+            if op > 0:
+                mask = (df['Diameter'] == rd)
+                for k, v in rev_specs.items():
+                    if v != "-": mask &= (df[k] == v)
+                
+                row = df[mask]
+                
+                if row.empty:
+                    st.warning("❌ No pipes found with these criteria.")
+                else:
+                    unique_weights = [w for w in row['Weight'].unique() if w > 0]
+                    if len(unique_weights) == 0:
+                        st.error("⚠️ Found pipes but weights are 0.")
+                    elif len(unique_weights) == 1:
+                        w = unique_weights[0]
+                        est_ton = (op / w) * 1000
+                        st.success(f"🏭 Estimated Ton Price: **{est_ton:,.2f} EGP**")
+                        st.markdown(f"**Based on:** Weight {w} kg/m")
+                    else:
+                        st.info(f"💡 Found {len(row)} possible pipes:")
+                        results_table = row.copy()
+                        results_table['Calculated Ton Price'] = (op / results_table['Weight']) * 1000
+                        display_cols = ['Diameter', 'Weight', 'Calculated Ton Price'] + [c for c in spec_cols if c in results_table.columns]
+                        st.dataframe(results_table[display_cols].style.format({'Calculated Ton Price': '{:,.2f}', 'Weight': '{:.3f}'}))
+            else:
+                st.warning("Please enter a price.")
+else:
+    st.info("Loading...")
