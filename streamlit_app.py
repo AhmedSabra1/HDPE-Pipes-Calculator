@@ -18,51 +18,60 @@ st.set_page_config(
     page_icon="🔧"
 )
 
-# --- تنسيقات CSS المحسنة (خطوط أكبر + تصميم فخم) ---
+# --- تنسيقات CSS (الألوان الفاتحة والخطوط الكبيرة) ---
 st.markdown("""
 <style>
-    /* الحاوية الرئيسية للهيدر */
+    /* الحاوية الرئيسية للهيدر - خلفية غامقة عشان تناسب الوضع الليلي */
     .main-container {
-        background-color: #ffffff;
+        background-color: #1E1E1E; /* رمادي غامق جداً */
         padding: 2rem;
         border-radius: 15px;
         margin-bottom: 2rem;
-        border-left: 10px solid #0077b5;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border-left: 10px solid #00a8ff; /* خط أزرق سماوي فاتح */
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
     
-    /* العنوان الرئيسي */
+    /* العنوان الرئيسي - لون أبيض */
     .main-header {
         font-size: 3.5rem; 
-        color: #2c3e50; 
+        color: #ffffff; 
         font-weight: 900; 
         margin-bottom: 0.2rem;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Segoe UI', sans-serif;
         letter-spacing: -1px;
     }
     
-    /* العنوان الفرعي (CREATED BY) */
+    /* العنوان الفرعي - لون سماوي فاتح */
     .sub-header {
         font-size: 1.4rem; 
-        color: #7f8c8d; 
+        color: #00a8ff; 
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
 
-    /* تكبير خطوط التبويبات (Tabs) */
-    button[data-baseweb="tab"] > div {
-        font-size: 1.3rem !important;
-        font-weight: bold !important;
-        padding-top: 5px;
-        padding-bottom: 5px;
+    /* === تكبير وتفتيح لون أسماء الخانات (Labels) === */
+    /* ده بيغير لون "Diameter", "Price", "Unit" للأبيض */
+    .stNumberInput label p, 
+    .stTextInput label p, 
+    .stSelectbox label p, 
+    .stRadio label p {
+        font-size: 1.4rem !important; /* خط كبير */
+        font-weight: 700 !important;
+        color: #ffffff !important; /* لون أبيض ناصع */
     }
 
-    /* تكبير أسماء الخانات (Labels) */
-    .stNumberInput label p, .stTextInput label p, .stSelectbox label p, .stRadio label p {
-        font-size: 1.1rem !important;
-        font-weight: 600 !important;
-        color: #34495e !important;
+    /* === تكبير وتفتيح خيارات الراديو (HDPE / uPVC) === */
+    .stRadio div[role='radiogroup'] label div p {
+        font-size: 1.5rem !important; /* تكبير الاختيارات نفسها */
+        font-weight: bold !important;
+        color: #e0e0e0 !important; /* لون أبيض مائل للرمادي الخفيف */
+    }
+
+    /* تكبير الكلام اللي بيتكتب جوه الخانات */
+    .stNumberInput input, .stTextInput input {
+        font-size: 1.2rem !important;
+        font-weight: bold;
     }
 
     /* تكبير الأزرار */
@@ -71,7 +80,13 @@ st.markdown("""
         border-radius: 8px;
         font-weight: bold;
         height: 3.5em;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
+    }
+    
+    /* تكبير خطوط التبويبات (Tabs) */
+    button[data-baseweb="tab"] > div {
+        font-size: 1.3rem !important;
+        font-weight: bold !important;
     }
 </style>
 
@@ -129,7 +144,7 @@ def load_data(file_path, sheet_name):
 
 def create_pdf(dataframe):
     buffer = io.BytesIO()
-    # هنا التعديل: landscape(A4) عشان الورقة تبقى بالعرض وتكفي الكلام
+    # Landscape orientation
     doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=30, bottomMargin=18)
     elements = []
     styles = getSampleStyleSheet()
@@ -152,14 +167,14 @@ def create_pdf(dataframe):
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0077b5")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), # توسيط رأسي
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10), # حجم خط الهيدر
-        ('FONTSIZE', (0, 1), (-1, -1), 9),  # حجم خط الداتا
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 1), (-1, -1), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('TOPPADDING', (0, 0), (-1, 0), 12),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('ROWBACKGROUNDS', (1, 0), (-1, -1), [colors.white, colors.HexColor("#f8f9fa")]), # تلوين تبادلي للصفوف
+        ('ROWBACKGROUNDS', (1, 0), (-1, -1), [colors.white, colors.HexColor("#f8f9fa")]),
     ]))
     elements.append(table)
     
