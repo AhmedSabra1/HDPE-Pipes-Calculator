@@ -5,7 +5,7 @@ import os
 import io
 from datetime import datetime
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
@@ -18,47 +18,66 @@ st.set_page_config(
     page_icon="🔧"
 )
 
+# --- تنسيقات CSS المحسنة (خطوط أكبر + تصميم فخم) ---
 st.markdown("""
 <style>
+    /* الحاوية الرئيسية للهيدر */
     .main-container {
         background-color: #ffffff;
         padding: 2rem;
         border-radius: 15px;
         margin-bottom: 2rem;
-        border-left: 8px solid #0077b5;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border-left: 10px solid #0077b5;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
     }
+    
+    /* العنوان الرئيسي */
     .main-header {
         font-size: 3.5rem; 
         color: #2c3e50; 
-        text-align: left; 
         font-weight: 900; 
-        margin-bottom: 0.5rem;
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        margin-bottom: 0.2rem;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         letter-spacing: -1px;
     }
+    
+    /* العنوان الفرعي (CREATED BY) */
     .sub-header {
-        font-size: 1.5rem; 
+        font-size: 1.4rem; 
         color: #7f8c8d; 
-        text-align: left; 
-        font-weight: 500;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
+
+    /* تكبير خطوط التبويبات (Tabs) */
+    button[data-baseweb="tab"] > div {
+        font-size: 1.3rem !important;
+        font-weight: bold !important;
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+    /* تكبير أسماء الخانات (Labels) */
+    .stNumberInput label p, .stTextInput label p, .stSelectbox label p, .stRadio label p {
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        color: #34495e !important;
+    }
+
+    /* تكبير الأزرار */
     .stButton>button {
         width: 100%;
         border-radius: 8px;
         font-weight: bold;
         height: 3.5em;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        font-size: 1.1rem;
     }
 </style>
+
 <div class="main-container">
     <div class="main-header">HDPE & uPVC Pipe Pricing Tool</div>
-    <div class="sub-header">Advanced Estimation System | Developed by Eng. Ahmed Sabra</div>
+    <div class="sub-header">CREATED BY Eng. Ahmed Sabra</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -110,35 +129,44 @@ def load_data(file_path, sheet_name):
 
 def create_pdf(dataframe):
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+    # هنا التعديل: landscape(A4) عشان الورقة تبقى بالعرض وتكفي الكلام
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=30, bottomMargin=18)
     elements = []
     styles = getSampleStyleSheet()
 
-    title_style = ParagraphStyle(name='Title', parent=styles['Title'], fontName='Helvetica-Bold', fontSize=22, alignment=1, spaceAfter=20, textColor=colors.HexColor("#2c3e50"))
+    # Title
+    title_style = ParagraphStyle(name='Title', parent=styles['Title'], fontName='Helvetica-Bold', fontSize=24, alignment=1, spaceAfter=20, textColor=colors.HexColor("#2c3e50"))
     elements.append(Paragraph(f"Pipe Quotation: {material_type}", title_style))
     
+    # Date
     date_str = datetime.now().strftime("%Y-%m-%d")
     elements.append(Paragraph(f"Date: {date_str}", styles['Normal']))
     elements.append(Spacer(1, 20))
 
+    # Table
     print_df = dataframe.copy()
     data = [print_df.columns.to_list()] + print_df.values.tolist()
     table = Table(data, repeatRows=1)
+    
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0077b5")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'), # توسيط رأسي
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 0), (-1, 0), 10), # حجم خط الهيدر
+        ('FONTSIZE', (0, 1), (-1, -1), 9),  # حجم خط الداتا
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('TOPPADDING', (0, 0), (-1, 0), 12),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (1, 0), (-1, -1), [colors.white, colors.HexColor("#f8f9fa")]), # تلوين تبادلي للصفوف
     ]))
     elements.append(table)
     
+    # Footer
     elements.append(Spacer(1, 40))
     footer_style = ParagraphStyle(name='Footer', parent=styles['Normal'], alignment=1, fontSize=10)
-    footer_text = "<b>Tool Developed by Eng. Ahmed Sabra | Contact: +201148777463</b>"
+    footer_text = "<b>CREATED BY Eng. Ahmed Sabra | Contact: +201148777463</b>"
     elements.append(Paragraph(footer_text, footer_style))
 
     doc.build(elements)
@@ -172,7 +200,6 @@ if df is None:
         except: pass
 
 if df is not None:
-    # Filter Columns
     if material_type == "HDPE":
         allowed_cols = ['PN', 'SDR']
         spec_cols = [c for c in df.columns if c in allowed_cols]
@@ -216,7 +243,7 @@ if df is not None:
                         
                         mask = (df['Diameter'] == actual_dia)
                         for k, v in user_specs.items():
-                            if v != "-": mask &= (df[k] == v) # فلترة ذكية
+                            if v != "-": mask &= (df[k] == v)
                         
                         row = df[mask]
                         if not row.empty:
@@ -266,7 +293,7 @@ if df is not None:
                     st.session_state.quote_list = []
                     st.rerun()
 
-    # --- TAB 2: Reverse Analysis (SMART FIX) ---
+    # --- TAB 2: Reverse Analysis ---
     with tab2:
         st.markdown("#### Reverse Analysis (Find Ton Price)")
         st.caption("Tip: You don't have to fill all fields. Just select what you know.")
@@ -286,47 +313,27 @@ if df is not None:
 
         if st.button("Analyze Offer 🔍", type="primary"):
             if op > 0:
-                # 1. فلترة أساسية بالقطر
                 mask = (df['Diameter'] == rd)
-                
-                # 2. فلترة ذكية: تجاهل أي خانة فيها شرطة "-"
-                active_filters = []
                 for k, v in rev_specs.items():
-                    if v != "-":
-                        mask &= (df[k] == v)
-                        active_filters.append(f"{k}={v}")
+                    if v != "-": mask &= (df[k] == v)
                 
                 row = df[mask]
                 
                 if row.empty:
-                    st.warning("❌ No pipes found with these criteria. Try selecting fewer filters.")
+                    st.warning("❌ No pipes found with these criteria.")
                 else:
-                    # لو لقينا مواسير، نشوف هل الأوزان مختلفة؟
-                    unique_weights = row['Weight'].unique()
-                    
-                    # نشيل الأصفار لو موجودة
-                    unique_weights = [w for w in unique_weights if w > 0]
-                    
+                    unique_weights = [w for w in row['Weight'].unique() if w > 0]
                     if len(unique_weights) == 0:
-                        st.error("⚠️ Found pipes but weights are 0 (Not produced).")
-                        
+                        st.error("⚠️ Found pipes but weights are 0.")
                     elif len(unique_weights) == 1:
-                        # حالة مثالية: لقينا ماسورة واحدة أو مواسير بنفس الوزن
                         w = unique_weights[0]
                         est_ton = (op / w) * 1000
                         st.success(f"🏭 Estimated Ton Price: **{est_ton:,.2f} EGP**")
                         st.markdown(f"**Based on:** Weight {w} kg/m")
-                        
                     else:
-                        # حالة تعدد النتائج: لقينا كذا ماسورة بأوزان مختلفة
-                        st.info(f"💡 Found {len(row)} possible pipes. Here are the Ton Prices for each:")
-                        
-                        # جدول مقارنة
+                        st.info(f"💡 Found {len(row)} possible pipes:")
                         results_table = row.copy()
-                        # نحسب سعر الطن لكل احتمال
                         results_table['Calculated Ton Price'] = (op / results_table['Weight']) * 1000
-                        
-                        # نختار العماويد المهمة للعرض
                         display_cols = ['Diameter', 'Weight', 'Calculated Ton Price'] + [c for c in spec_cols if c in results_table.columns]
                         st.dataframe(results_table[display_cols].style.format({'Calculated Ton Price': '{:,.2f}', 'Weight': '{:.3f}'}))
             else:
