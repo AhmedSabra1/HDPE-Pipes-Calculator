@@ -18,20 +18,17 @@ st.set_page_config(
     page_icon="🔧"
 )
 
-# --- CSS ذكي يعمل في الوضعين (Light & Dark) ---
+# --- CSS ذكي + إصلاح مشاكل الطباعة ---
 st.markdown("""
 <style>
-    /* 1. الحاوية الرئيسية للهيدر */
-    /* بنخلي الخلفية لونها أزرق ثابت، فالكلام جواها لازم يبقى أبيض دائماً */
+    /* === تصميم الشاشة (Screen Styles) === */
     .main-container {
-        background-color: #0077b5; /* لون البراند الأزرق */
+        background-color: #0077b5;
         padding: 2rem;
         border-radius: 15px;
         margin-bottom: 2rem;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    
-    /* العنوان الرئيسي (دائماً أبيض لأنه على خلفية زرقاء) */
     .main-header {
         font-size: 3.5rem; 
         color: #ffffff !important; 
@@ -40,8 +37,6 @@ st.markdown("""
         font-family: 'Segoe UI', sans-serif;
         letter-spacing: -1px;
     }
-    
-    /* العنوان الفرعي (أبيض شفاف شوية) */
     .sub-header {
         font-size: 1.4rem; 
         color: rgba(255, 255, 255, 0.9) !important; 
@@ -50,50 +45,61 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* 2. تكبير وتوضيح أسماء الخانات (Labels) */
-    /* هنا السر: بنستخدم var(--text-color) عشان يقلب لوحده حسب وضع الجهاز */
-    .stNumberInput label p, 
-    .stTextInput label p, 
-    .stSelectbox label p, 
-    .stRadio label p {
-        font-size: 1.3rem !important; /* خط كبير */
-        font-weight: 800 !important;  /* خط عريض */
-        color: var(--text-color) !important; /* ذكي: يسود في الفاتح ويبيض في الغامق */
+    /* تكبير وتلوين العناوين */
+    .stNumberInput label p, .stTextInput label p, .stSelectbox label p, .stRadio label p {
+        font-size: 1.3rem !important;
+        font-weight: 800 !important;
+        color: var(--text-color) !important;
     }
-
-    /* 3. تكبير خيارات الراديو (HDPE / uPVC) */
     .stRadio div[role='radiogroup'] label div p {
         font-size: 1.4rem !important;
         font-weight: bold !important;
         color: var(--text-color) !important;
     }
-
-    /* 4. الكلام اللي بيتكتب جوه الخانات */
     .stNumberInput input, .stTextInput input {
         font-size: 1.2rem !important;
         font-weight: bold;
         color: var(--text-color) !important;
     }
 
-    /* 5. الأزرار */
+    /* الأزرار */
     .stButton>button {
         width: 100%;
         border-radius: 8px;
         font-weight: bold;
         height: 3.5em;
         font-size: 1.2rem;
-        background-color: #0077b5; /* أزرق */
-        color: white; /* كتابة بيضاء */
+        background-color: #0077b5;
+        color: white;
         border: none;
     }
     .stButton>button:hover {
-        background-color: #005f91; /* أغمق سنة لما تقف عليه */
+        background-color: #005f91;
     }
-
-    /* 6. تكبير التبويبات */
     button[data-baseweb="tab"] > div {
         font-size: 1.3rem !important;
         font-weight: bold !important;
+    }
+
+    /* === إصلاح الطباعة (Print Styles) === */
+    /* الكود ده بيشتغل بس لما تدوس Ctrl+P */
+    @media print {
+        .main-container {
+            background-color: white !important;
+            border: 2px solid #000 !important;
+            box-shadow: none !important;
+            color: black !important;
+        }
+        .main-header {
+            color: black !important; /* تحويل العنوان لإسود في الطباعة */
+        }
+        .sub-header {
+            color: #333 !important;
+        }
+        /* إخفاء العناصر غير المهمة في الطباعة */
+        .stButton, footer, header {
+            display: none !important;
+        }
     }
 </style>
 
@@ -156,8 +162,8 @@ def create_pdf(dataframe):
     elements = []
     styles = getSampleStyleSheet()
 
-    # Title
-    title_style = ParagraphStyle(name='Title', parent=styles['Title'], fontName='Helvetica-Bold', fontSize=24, alignment=1, spaceAfter=20, textColor=colors.HexColor("#2c3e50"))
+    # Title - لون أسود صريح عشان الطباعة
+    title_style = ParagraphStyle(name='Title', parent=styles['Title'], fontName='Helvetica-Bold', fontSize=24, alignment=1, spaceAfter=20, textColor=colors.black)
     elements.append(Paragraph(f"Pipe Quotation: {material_type}", title_style))
     
     # Date
@@ -170,18 +176,22 @@ def create_pdf(dataframe):
     data = [print_df.columns.to_list()] + print_df.values.tolist()
     table = Table(data, repeatRows=1)
     
+    # === تعديل ألوان الجدول للطباعة الآمنة ===
     table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0077b5")),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        # الهيدر: خلفية رمادي فاتح + كلام أسود (بدل أبيض على أزرق)
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('FONTSIZE', (0, 1), (-1, -1), 9),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('FONTSIZE', (0, 1), (-1, -1), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
         ('TOPPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('ROWBACKGROUNDS', (1, 0), (-1, -1), [colors.white, colors.HexColor("#f8f9fa")]),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        # الصفوف: أبيض ورمادي خفيف جداً
+        ('ROWBACKGROUNDS', (1, 0), (-1, -1), [colors.white, colors.whitesmoke]),
     ]))
     elements.append(table)
     
